@@ -13,6 +13,10 @@ app.use(cookieParser());
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connected'));
 
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
+
 app.use('/api', authRoutes);
 
 const PORT = process.env.PORT;
