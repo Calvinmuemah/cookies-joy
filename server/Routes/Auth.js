@@ -46,27 +46,18 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate inputs
     if (!email || !password) {
       return res.status(400).json({ msg: 'Email and password are required' });
     }
 
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ msg: 'Invalid credentials' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ msg: 'Invalid credentials' });
     }
 
     const { accessToken, refreshToken } = generateTokens(user._id);
-
-    // Store refresh token in DB
     await Token.create({ userId: user._id, token: refreshToken });
 
-    // Send refresh token in cookie
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: true,
@@ -74,14 +65,13 @@ router.post('/login', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    // Return access token in JSON response
-    return res.status(200).json({ accessToken });
-
+    res.status(200).json({ accessToken });
   } catch (error) {
-    console.error('Login error:', error);
-    return res.status(500).json({ msg: 'Internal server error' });
+    console.error('Login route error:', error.message);
+    res.status(500).json({ msg: 'Internal server error' });
   }
 });
+
   
 
 // REFRESH TOKEN
